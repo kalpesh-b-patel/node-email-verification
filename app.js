@@ -4,6 +4,7 @@ const express = require('express');
 const app = express();
 const PORT = process.env.PORT || 3001;
 const Email = require('./models/user.model');
+const sendEmail = require('./config/mailer');
 
 app.use(express.json());
 
@@ -25,14 +26,17 @@ app.post('/api/v1/verify', async (req, res) => {
 
   const newEmail = new Email({ email });
   try {
+    const sent = await sendEmail(email);
     await newEmail.save();
-    
-  res.status(200).json({
-    message: 'Link has already been sent to you!',
-  });
-
-  // step 1: Save email to database with default status and expiry date
-  // step 2: Send an email with confirmation link
+    console.log(sent);
+    res.status(200).json({
+      message: 'Email sent!',
+    });
+  } catch (e) {
+    res.status(500).json({
+      message: 'Something went wrong!',
+    });
+  }
 });
 
 app.listen(PORT, () => {
