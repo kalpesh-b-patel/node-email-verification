@@ -8,12 +8,14 @@ let transporter = nodemailer.createTransport({
   },
 });
 
-const sendEmail = async (email) => {
+const sendEmail = async (email, token) => {
   const mailOptions = {
     from: `cleancode.blog ${process.env.GMAIL_EMAIL}`,
     to: email,
     subject: 'Please confirm email address',
-    html: `<p>Email: ${email}</p>`,
+    html: `
+    <p>Thank you for your subscription</p>
+    <p>Please confirm your email by clicking <a href="http://localhost:3002/api/v1/confirm?email=${email}&token=${token}" _target="blank">this</> link</p>`,
   };
 
   try {

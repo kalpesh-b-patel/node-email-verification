@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-
-const utcDate = () => new Date();
+const status = require('../utils/constants');
 
 const Email = mongoose.model(
   'Email',
@@ -8,13 +7,10 @@ const Email = mongoose.model(
     email: String,
     status: {
       type: String,
-      enum: ['Pending', 'Active'],
-      default: 'Pending',
+      default: status.pending,
     },
-    expiresAt: {
-      type: Date,
-      default: utcDate().setUTCDate(utcDate().getUTCDate() + 1),
-    },
+    token: String,
+    expiresAt: Date,
   })
 );
 

@@ -5,38 +5,106 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const Email = require('./models/user.model');
 const sendEmail = require('./config/mailer');
+const randomString = require('./utils/randomString');
+const status = require('./utils/constants');
 
 app.use(express.json());
 
 app.post('/api/v1/verify', async (req, res) => {
   const { email } = req.body;
-  const found = await Email.findOne({ email });
 
-  if (found) {
-    if (found.status === 'Active') {
-      return res.status(200).json({
-        message: 'You are already subscribed!',
-      });
-    } else {
-      return res.status(200).json({
-        message: 'Link has already been sent to you!',
-      });
-    }
+  if (!email) {
+    return res.status(400).json({
+      message: 'Invalid email address!',
+    });
   }
 
-  const newEmail = new Email({ email });
+  // Duplicate subscription
   try {
-    const sent = await sendEmail(email);
+    const found = await Email.findOne({ email });
+
+    if (found) {
+      if (found.status === status.active) {
+        return res.status(400).json({
+          message: 'You are already subscribed!',
+        });
+      } else {
+        const today = new Date('2022-01-04T03:58:26.073Z').toISOString();
+        const expires = new Date(found.expiresAt).toISOString();
+
+        if (found.expiresAt < today) {
+          return res.status(400).json({
+            message: 'New link has been sent to you!',
+          });
+        } else {
+          return res.status(200).json({
+            message: 'Link has already been sent to you!',
+          });
+        }
+      }
+    }
+  } catch {
+    return res.status(500).json({
+      message: 'Oops! Something went wrong! Please try again later',
+    });
+  }
+
+  // New subscription
+  try {
+    const token = randomString(32);
+    let expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 1);
+
+    // const sent = await sendEmail(email, token);
+
+    const newEmail = new Email({
+      email,
+      token,
+      expiresAt: expiresAt.toISOString(),
+    });
     await newEmail.save();
-    console.log(sent);
+
     res.status(200).json({
       message: 'Email sent!',
     });
   } catch (e) {
+    console.log(e);
     res.status(500).json({
-      message: 'Something went wrong!',
+      message: 'Oops! Something went wrong! Please try again later',
     });
   }
+});
+
+app.get('/api/v1/confirm', async (req, res) => {
+  const { email, token } = req.query;
+
+  if (!email || !token) {
+    return res.status(400).json({
+      message: 'Bad Request!',
+    });
+  }
+
+  const found = await Email.findOne({ email });
+
+  if (!found) {
+    return res.status(400).json({
+      message: 'Bad request!',
+    });
+  }
+
+  if (found.status === 'Active') {
+    return res.status(400).json({
+      message: 'Email has already been verified!',
+    });
+  }
+
+  await Email.findOneAndReplace(
+    { email },
+    { email, status: 'Active', expiresAt: undefined }
+  );
+  res.status(200).json({
+    message: 'Succesfully verified!',
+  });
 });
 
 app.listen(PORT, () => {
