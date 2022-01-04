@@ -29,16 +29,18 @@ app.post('/api/v1/verify', async (req, res) => {
           message: 'You are already subscribed!',
         });
       } else {
-        const today = new Date('2022-01-04T03:58:26.073Z').toISOString();
+        const today = new Date().toISOString();
         const expires = new Date(found.expiresAt).toISOString();
 
-        if (found.expiresAt < today) {
+        if (today > expires) {
           return res.status(400).json({
-            message: 'New link has been sent to you!',
+            message:
+              'This link has been expired! New link has been sent to you!',
           });
         } else {
           return res.status(200).json({
-            message: 'Link has already been sent to you!',
+            message:
+              'Link has already been sent to you! Please check your email!',
           });
         }
       }
@@ -55,7 +57,13 @@ app.post('/api/v1/verify', async (req, res) => {
     let expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 1);
 
-    // const sent = await sendEmail(email, token);
+    const sent = await sendEmail(email, token);
+    if (!sent) {
+      return res.status(400).json({
+        message:
+          'We could not send the verification link to your email address!',
+      });
+    }
 
     const newEmail = new Email({
       email,
@@ -68,7 +76,6 @@ app.post('/api/v1/verify', async (req, res) => {
       message: 'Email sent!',
     });
   } catch (e) {
-    console.log(e);
     res.status(500).json({
       message: 'Oops! Something went wrong! Please try again later',
     });
