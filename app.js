@@ -114,6 +114,12 @@ app.get('/api/v1/confirm', async (req, res) => {
   });
 });
 
+app.get('/api/v1/health', (_, res) => {
+  return res.status(200).json({
+    health: 'Up',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
