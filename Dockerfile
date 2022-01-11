@@ -16,7 +16,7 @@ COPY package*.json ./
 # RUN npm ci --only=production
 RUN npm install --only=production
 
-# Copy local code to the container image.
+# Copy local code to the container image(Don't forget to ignore node_modules).
 COPY . ./
 
 # Run the web service on container startup.

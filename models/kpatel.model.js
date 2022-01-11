@@ -1,17 +1,21 @@
 const mongoose = require('mongoose');
 const status = require('../utils/constants');
 
-const Email = mongoose.model(
-  'Email',
+const Kpatel = mongoose.model(
+  'Kpatel',
   new mongoose.Schema({
     email: String,
     status: {
       type: String,
       default: status.pending,
     },
-    token: String,
-    expiresAt: Date,
+    message: String,
+    name: String,
+    createdAt: {
+        type: Date,
+        default: new Date()
+    }
   })
 );
 
-module.exports = Email;
+module.exports = Kpatel;

@@ -2,11 +2,12 @@ require('dotenv').config();
 require('./config/mongodb');
 const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3001;
-const Email = require('./models/user.model');
 const sendEmail = require('./config/mailer');
 const randomString = require('./utils/randomString');
 const status = require('./utils/constants');
+
+const Cleancode = require('./models/cleancode.model');
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -21,9 +22,10 @@ app.post('/api/v1/verify', async (req, res) => {
 
   // Duplicate subscription
   try {
-    const found = await Email.findOne({ email });
+    const found = await Cleancode.findOne({ email });
 
     if (found) {
+      
       if (found.status === status.active) {
         return res.status(400).json({
           message: 'You are already subscribed!',
@@ -33,6 +35,7 @@ app.post('/api/v1/verify', async (req, res) => {
         const expires = new Date(found.expiresAt).toISOString();
 
         if (today > expires) {
+          // TODO: Send new link with updated expiry date
           return res.status(400).json({
             message:
               'This link has been expired! New link has been sent to you!',
@@ -43,6 +46,7 @@ app.post('/api/v1/verify', async (req, res) => {
               'Link has already been sent to you! Please check your email!',
           });
         }
+
       }
     }
   } catch {
@@ -58,6 +62,7 @@ app.post('/api/v1/verify', async (req, res) => {
     expiresAt.setDate(expiresAt.getDate() + 1);
 
     const sent = await sendEmail(email, token);
+    
     if (!sent) {
       return res.status(400).json({
         message:
@@ -65,12 +70,12 @@ app.post('/api/v1/verify', async (req, res) => {
       });
     }
 
-    const newEmail = new Email({
+    const newSubscriber = new Cleancode({
       email,
       token,
       expiresAt: expiresAt.toISOString(),
     });
-    await newEmail.save();
+    await newSubscriber.save();
 
     res.status(200).json({
       message: 'Email sent!',
